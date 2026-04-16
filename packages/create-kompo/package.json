@@ -1,0 +1,38 @@
+{
+  "name": "create-kompo",
+  "version": "0.1.0",
+  "private": false,
+  "description": "Create Kompo App",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kompojs/create-kompo.git",
+    "directory": "packages/create-kompo"
+  },
+  "homepage": "https://kompo.dev",
+  "bugs": {
+    "url": "https://github.com/kompojs/create-kompo/issues"
+  },
+  "main": "index.js",
+  "bin": {
+    "create-kompo": "./index.js"
+  },
+  "scripts": {
+    "clean": "rimraf dist node_modules",
+    "test": "echo \"Skipping tests for create-kompo public wrapper\" && exit 0",
+    "test:coverage": "mkdir -p coverage && echo \"Skipped\" > coverage/placeholder && echo \"Skipping coverage for create-kompo public wrapper\" && exit 0"
+  },
+  "keywords": [
+    "kompo",
+    "kompojs",
+    "create-kompo",
+    "web3",
+    "typescript",
+    "framework",
+    "cli"
+  ],
+  "author": "SmarttDev",
+  "license": "MIT",
+  "dependencies": {
+    "@kompojs/create-kompo": "workspace:*"
+  }
+}

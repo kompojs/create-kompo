@@ -1,0 +1,30 @@
+{
+  "name": "@kompojs/create-kompo",
+  "version": "0.1.1",
+  "private": false,
+  "description": "Create Kompo App - Modern Web3 Framework for TypeScript",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "create-kompo": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "dev": "tsup src/index.ts --format esm --watch",
+    "clean": "rimraf dist node_modules"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@clack/prompts": "1.0.0-alpha.9",
+    "commander": "^11.1.0",
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
+  }
+}
