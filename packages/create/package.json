@@ -1,6 +1,6 @@
 {
   "name": "@kompojs/create-kompo",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": false,
   "description": "Create Kompo App - Modern Web3 Framework for TypeScript",
   "type": "module",

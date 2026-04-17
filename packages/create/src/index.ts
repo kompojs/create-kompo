@@ -7,7 +7,7 @@ import { cancel, intro, isCancel, log, note, outro, select, spinner, text } from
 import { Command } from 'commander'
 import color from 'picocolors'
 
-const VERSION = '0.1.1'
+const VERSION = '0.1.2'
 
 // ---------------------------------------------------------------------------
 // Package manager detection (for the host system)
@@ -43,6 +43,15 @@ function pmExec(pm: PM): string {
 // Scaffold helpers
 // ---------------------------------------------------------------------------
 
+function pmVersion(pm: PM): string {
+  switch (pm) {
+    case 'pnpm': return '10.28.1'
+    case 'yarn': return '4.5.0'
+    case 'bun': return '1.1.34'
+    default: return '10.9.0'
+  }
+}
+
 function createRootPackageJson(
   dir: string,
   projectName: string,
@@ -53,6 +62,7 @@ function createRootPackageJson(
     version: '0.0.1',
     private: true,
     type: 'module',
+    packageManager: `${pm}@${pmVersion(pm)}`,
     scripts: {
       dev: 'turbo run dev --parallel',
       build: 'turbo run build',
@@ -97,7 +107,7 @@ function createTurboJson(dir: string): void {
 }
 
 function createTsConfigBase(dir: string): void {
-  const tsconfig = {
+  const tsconfigBase = {
     compilerOptions: {
       target: 'ES2022',
       module: 'ES2022',
@@ -110,7 +120,21 @@ function createTsConfigBase(dir: string): void {
       sourceMap: true,
     },
   }
-  fs.writeFileSync(path.join(dir, 'tsconfig.json'), JSON.stringify(tsconfig, null, 2) + '\n')
+  fs.writeFileSync(
+    path.join(dir, 'tsconfig.base.json'),
+    JSON.stringify(tsconfigBase, null, 2) + '\n',
+  )
+
+  // Minimal root tsconfig.json for IDE navigation — extends the base.
+  const tsconfigRoot = {
+    extends: './tsconfig.base.json',
+    include: [],
+    exclude: ['node_modules', 'dist', '.next', 'build', '.turbo'],
+  }
+  fs.writeFileSync(
+    path.join(dir, 'tsconfig.json'),
+    JSON.stringify(tsconfigRoot, null, 2) + '\n',
+  )
 }
 
 function createGitignore(dir: string): void {
