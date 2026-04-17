@@ -7,7 +7,7 @@ import { cancel, intro, isCancel, log, note, outro, select, spinner, text } from
 import { Command } from 'commander'
 import color from 'picocolors'
 
-const VERSION = '0.1.2'
+const VERSION = '0.1.3'
 
 // ---------------------------------------------------------------------------
 // Package manager detection (for the host system)
@@ -64,7 +64,7 @@ function createRootPackageJson(
     type: 'module',
     packageManager: `${pm}@${pmVersion(pm)}`,
     scripts: {
-      dev: 'turbo run dev --parallel',
+      dev: 'turbo run dev',
       build: 'turbo run build',
       kompo: `${pmExec(pm)} kompo`,
     },
