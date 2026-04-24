@@ -3,7 +3,7 @@
 import fs from 'node:fs'
 import { execSync } from 'node:child_process'
 import path from 'node:path'
-import { cancel, intro, isCancel, log, note, outro, select, spinner, text } from '@clack/prompts'
+import { cancel, intro, isCancel, log, note, outro, spinner, text } from '@clack/prompts'
 import { Command } from 'commander'
 import color from 'picocolors'
 
@@ -70,7 +70,7 @@ function createRootPackageJson(
     },
   }
 
-  fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify(pkg, null, 2) + '\n')
+  fs.writeFileSync(path.join(dir, 'package.json'), `${JSON.stringify(pkg, null, 2)}\n`)
 }
 
 function createWorkspaceConfig(dir: string, pm: PM): void {
@@ -84,7 +84,7 @@ function createWorkspaceConfig(dir: string, pm: PM): void {
     const pkgPath = path.join(dir, 'package.json')
     const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
     pkg.workspaces = ['apps/*', 'libs/**', 'packages/*']
-    fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
+    fs.writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`)
   }
 }
 
@@ -103,7 +103,7 @@ function createTurboJson(dir: string): void {
       clean: {},
     },
   }
-  fs.writeFileSync(path.join(dir, 'turbo.json'), JSON.stringify(turbo, null, 2) + '\n')
+  fs.writeFileSync(path.join(dir, 'turbo.json'), `${JSON.stringify(turbo, null, 2)}\n`)
 }
 
 function createTsConfigBase(dir: string): void {
@@ -122,7 +122,7 @@ function createTsConfigBase(dir: string): void {
   }
   fs.writeFileSync(
     path.join(dir, 'tsconfig.base.json'),
-    JSON.stringify(tsconfigBase, null, 2) + '\n',
+    `${JSON.stringify(tsconfigBase,null,2)}\n`,
   )
 
   // Minimal root tsconfig.json for IDE navigation — extends the base.
@@ -133,7 +133,7 @@ function createTsConfigBase(dir: string): void {
   }
   fs.writeFileSync(
     path.join(dir, 'tsconfig.json'),
-    JSON.stringify(tsconfigRoot, null, 2) + '\n',
+    `${JSON.stringify(tsconfigRoot, null, 2)}\n`,
   )
 }
 
@@ -172,7 +172,9 @@ program
   .argument('[directory]', 'Project directory')
   .option('-t, --template <name>', 'Starter template to use (e.g. nextjs.shadcn.blank)')
   .option('--pm <manager>', 'Package manager to use (pnpm|npm|yarn|bun)')
-  .action(async (directory: string | undefined, options: { template?: string; pm?: PM }) => {
+  .option('--org <name>', 'Organisation scope for your packages (e.g. mycompany)')
+  .option('-y, --yes', 'Skip all prompts and use defaults')
+  .action(async (directory: string | undefined, options: { template?: string; pm?: PM; org?: string; yes?: boolean }) => {
     console.clear()
     intro(color.bgBlue(color.white(' create-kompo ')))
 
@@ -196,25 +198,27 @@ program
       process.exit(1)
     }
 
-    // 2. Package manager
-    let pm: PM = options.pm ?? detectPM()
+    // 2. Package manager — auto-detect from the invoking PM (pnpm create kompo → pnpm)
+    const pm: PM = options.pm ?? detectPM()
+    log.info(color.dim(`Using package manager: ${color.bold(pm)}`))
 
-    if (!options.pm) {
-      const pmChoice = await select({
-        message: 'Which package manager?',
-        options: [
-          { value: 'pnpm', label: 'pnpm', hint: 'recommended' },
-          { value: 'npm', label: 'npm' },
-          { value: 'yarn', label: 'yarn' },
-          { value: 'bun', label: 'bun' },
-        ],
-        initialValue: pm,
+    // 3. Organisation scope
+    let org: string | undefined = options.org
+    if (!org && !options.yes) {
+      const orgInput = await text({
+        message: 'Organisation scope for your packages (e.g. mycompany)',
+        placeholder: 'mycompany',
+        validate: (v) => {
+          if (!v) return 'Organisation is required'
+          if (!/^[a-z][a-z0-9-]*$/.test(v)) return 'Must be lowercase, letters, numbers and hyphens only'
+          return undefined
+        },
       })
-      if (isCancel(pmChoice)) { cancel('Operation cancelled.'); process.exit(0) }
-      pm = pmChoice as PM
+      if (isCancel(orgInput)) { cancel('Operation cancelled.'); process.exit(0) }
+      org = orgInput as string
     }
 
-    // 3. Scaffold project structure
+    // 4. Scaffold project structure
     const s = spinner()
     s.start('Scaffolding project...')
 
@@ -228,14 +232,11 @@ program
 
     s.stop('Project structure created!')
 
-    // 4. Install core dependencies
+    // 5. Install core dependencies
     s.start(`Installing dependencies with ${pm}...`)
     try {
       const deps = [
-        '@kompojs/cli',
-        '@kompojs/blueprints',
-        '@kompojs/config',
-        '@kompojs/kit',
+        '@kompojs/core',
         'turbo',
         'typescript',
       ]
@@ -264,7 +265,7 @@ program
       process.exit(1)
     }
 
-    // 5. Install blueprint package for the target framework (if template specified)
+    // 6. Install blueprint package for the target framework (if template specified)
     const frameworkFromTemplate = options.template?.split('.')[0]
     if (frameworkFromTemplate) {
       const bpPkg = `@kompojs/blueprints-${frameworkFromTemplate}`
@@ -281,16 +282,26 @@ program
       }
     }
 
-    // 6. Run kompo add app
+    // 7. Run kompo add app
     console.log('')
     intro(color.bgGreen(color.black(' INITIALIZING PROJECT ')))
 
     try {
       const kompoExec = pmExec(pm)
       const args = ['kompo', 'add', 'app']
+
+      // Propagate --org so kompo add app never prompts for organisation
+      if (org) {
+        args.push('--org', org)
+      }
+
       if (options.template) {
         args.push('--template', options.template)
         log.info(color.dim(`Applying template: ${options.template}...`))
+        // If both --org and --template are set, go fully non-interactive
+        if (org) {
+          args.push('-y')
+        }
       } else {
         log.info(color.dim('Running interactive setup...'))
       }
@@ -305,7 +316,7 @@ program
       process.exit(1)
     }
 
-    // 7. Init git
+    // 8. Init git
     try {
       execSync('git init', { cwd: targetDir, stdio: 'pipe' })
       execSync('git add -A', { cwd: targetDir, stdio: 'pipe' })
@@ -314,7 +325,7 @@ program
       // Git init is best-effort
     }
 
-    // 8. Done!
+    // 9. Done!
     const runCmd = pm === 'npm' ? 'npm run' : pm
     const nextSteps = [`cd ${relativeDir}`, `${runCmd} dev`]
     note(nextSteps.join('\n'), 'Next steps')
