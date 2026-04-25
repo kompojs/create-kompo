@@ -1,0 +1,13 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.1.4/schema.json",
+  "changelog": "@changesets/cli/changelog",
+  "commit": false,
+  "fixed": [
+    ["@kompojs/create-kompo", "create-kompo", "create-kompojs"]
+  ],
+  "linked": [],
+  "access": "public",
+  "baseBranch": "staging",
+  "updateInternalDependencies": "patch",
+  "ignore": []
+}

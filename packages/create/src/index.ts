@@ -75,10 +75,18 @@ function createRootPackageJson(
 
 function createWorkspaceConfig(dir: string, pm: PM): void {
   if (pm === 'pnpm') {
-    fs.writeFileSync(
-      path.join(dir, 'pnpm-workspace.yaml'),
-      'packages:\n  - apps/*\n  - libs/**\n  - packages/*\n',
-    )
+    const workspaceYaml = [
+      'packages:',
+      '  - apps/*',
+      '  - libs/**',
+      '  - packages/*',
+      '',
+      'catalog:',
+      '  "@types/node": "^22.0.0"',
+      '  typescript: "^5.9.3"',
+      '',
+    ].join('\n')
+    fs.writeFileSync(path.join(dir, 'pnpm-workspace.yaml'), workspaceYaml)
   } else {
     // npm / yarn / bun use package.json#workspaces
     const pkgPath = path.join(dir, 'package.json')
